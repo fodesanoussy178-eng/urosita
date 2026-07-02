@@ -18,8 +18,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   async function loadProfile(userId: string) {
-    const prof = await fetchProfile(userId);
-    setProfile(prof);
+    try {
+      let prof = await fetchProfile(userId);
+      if (!prof) {
+        // Juste apres l'inscription, la ligne creee par le trigger peut mettre
+        // un instant a etre visible : une seconde tentative suffit.
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        prof = await fetchProfile(userId);
+      }
+      setProfile(prof);
+    } catch {
+      setProfile(null);
+    }
   }
 
   useEffect(() => {
@@ -35,7 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession ?? null);
       if (nextSession) {
-        loadProfile(nextSession.user.id);
+        // supabase-js tient un verrou interne pendant ce callback : toute
+        // requete lancee ici se bloque (deadlock connu). setTimeout la fait
+        // partir apres la liberation du verrou.
+        setTimeout(() => {
+          if (active) loadProfile(nextSession.user.id);
+        }, 0);
       } else {
         setProfile(null);
       }
