@@ -1,42 +1,52 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/features/auth/AuthContext';
-import { AuthForm } from '@/features/auth/AuthForm';
-import { Centered } from '@/components/ui/PageShell';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import { DashboardLayout } from '@/app/DashboardLayout';
-import { RoleDashboardPage } from '@/app/RoleDashboardPage';
-import { ProfilePage } from '@/features/profile/ProfilePage';
+import { T, FONT } from '@/components/ui/theme';
+import { EntryPage } from '@/app/EntryPage';
+import { SignInPage } from '@/features/auth/SignInPage';
+import { WorkerSignupPage } from '@/features/auth/WorkerSignupPage';
+import { StructureSignupPage } from '@/features/auth/StructureSignupPage';
+import { WorkerApp } from '@/features/worker/WorkerApp';
+import { StructureApp } from '@/features/structure/StructureApp';
+
+function Centered({ text }: { text: string }) {
+  return (
+    <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: FONT, color: T.sub, fontSize: 13, padding: 24, textAlign: 'center' }}>
+      {text}
+    </div>
+  );
+}
 
 function AppShell() {
-  const { session, loading } = useAuth();
+  const { session, profile, loading } = useAuth();
 
   if (!isSupabaseConfigured) {
-    return (
-      <Centered>
-        <p>Backend non configure : verifie VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans Vercel.</p>
-      </Centered>
-    );
+    return <Centered text="Backend non configuré : vérifie VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY." />;
   }
 
   if (loading) {
-    return (
-      <Centered>
-        <p>Chargement...</p>
-      </Centered>
-    );
+    return <Centered text="Chargement…" />;
   }
 
   if (!session) {
-    return <AuthForm />;
+    return (
+      <Routes>
+        <Route path="/" element={<EntryPage />} />
+        <Route path="/connexion" element={<SignInPage />} />
+        <Route path="/inscription/travailleur" element={<WorkerSignupPage />} />
+        <Route path="/inscription/structure" element={<StructureSignupPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  if (!profile) {
+    return <Centered text="Chargement du profil…" />;
   }
 
   return (
     <Routes>
-      <Route element={<DashboardLayout />}>
-        <Route path="/dashboard" element={<RoleDashboardPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-      </Route>
+      <Route path="*" element={profile.role === 'structure_admin' ? <StructureApp /> : <WorkerApp />} />
     </Routes>
   );
 }

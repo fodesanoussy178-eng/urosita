@@ -3,14 +3,18 @@ import type { Mission, MissionInsert } from './types';
 
 const MISSION_COLUMNS = 'id, structure_id, title, detail, city, scheduled_date, duration_minutes, worker_rate_cents, status, created_at';
 
-export async function fetchOpenMissions(): Promise<Mission[]> {
+export interface MissionWithStructure extends Mission {
+  structure: { name: string; siret: string | null } | null;
+}
+
+export async function fetchOpenMissions(): Promise<MissionWithStructure[]> {
   const { data, error } = await supabase
     .from('missions')
-    .select(MISSION_COLUMNS)
+    .select(`${MISSION_COLUMNS}, structure:structures(name, siret)`)
     .eq('status', 'open')
     .order('scheduled_date', { ascending: true });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as unknown as MissionWithStructure[];
 }
 
 export async function fetchMissionsForStructure(structureId: string): Promise<Mission[]> {
@@ -18,7 +22,7 @@ export async function fetchMissionsForStructure(structureId: string): Promise<Mi
     .from('missions')
     .select(MISSION_COLUMNS)
     .eq('structure_id', structureId)
-    .order('scheduled_date', { ascending: true });
+    .order('created_at', { ascending: false });
   if (error) throw error;
   return data ?? [];
 }
