@@ -13,10 +13,12 @@ alter table public.reliability_disputes enable row level security;
 -- ---------------------------------------------------------------------------
 -- profiles
 -- ---------------------------------------------------------------------------
+drop policy if exists "profiles: read own" on public.profiles;
 create policy "profiles: read own"
   on public.profiles for select
   using (id = auth.uid());
 
+drop policy if exists "profiles: structures read applicant profiles" on public.profiles;
 create policy "profiles: structures read applicant profiles"
   on public.profiles for select
   using (
@@ -30,6 +32,7 @@ create policy "profiles: structures read applicant profiles"
     )
   );
 
+drop policy if exists "profiles: update own" on public.profiles;
 create policy "profiles: update own"
   on public.profiles for update
   using (id = auth.uid())
@@ -38,10 +41,12 @@ create policy "profiles: update own"
 -- ---------------------------------------------------------------------------
 -- structures
 -- ---------------------------------------------------------------------------
+drop policy if exists "structures: owner full read" on public.structures;
 create policy "structures: owner full read"
   on public.structures for select
   using (owner_id = auth.uid());
 
+drop policy if exists "structures: read via open mission" on public.structures;
 create policy "structures: read via open mission"
   on public.structures for select
   using (
@@ -51,6 +56,7 @@ create policy "structures: read via open mission"
     )
   );
 
+drop policy if exists "structures: owner insert" on public.structures;
 create policy "structures: owner insert"
   on public.structures for insert
   with check (
@@ -61,11 +67,13 @@ create policy "structures: owner insert"
     )
   );
 
+drop policy if exists "structures: owner update" on public.structures;
 create policy "structures: owner update"
   on public.structures for update
   using (owner_id = auth.uid())
   with check (owner_id = auth.uid());
 
+drop policy if exists "structures: owner delete" on public.structures;
 create policy "structures: owner delete"
   on public.structures for delete
   using (owner_id = auth.uid());
@@ -73,6 +81,7 @@ create policy "structures: owner delete"
 -- ---------------------------------------------------------------------------
 -- missions
 -- ---------------------------------------------------------------------------
+drop policy if exists "missions: read open or own structure" on public.missions;
 create policy "missions: read open or own structure"
   on public.missions for select
   using (
@@ -83,6 +92,7 @@ create policy "missions: read open or own structure"
     )
   );
 
+drop policy if exists "missions: owner insert" on public.missions;
 create policy "missions: owner insert"
   on public.missions for insert
   with check (
@@ -92,6 +102,7 @@ create policy "missions: owner insert"
     )
   );
 
+drop policy if exists "missions: owner update" on public.missions;
 create policy "missions: owner update"
   on public.missions for update
   using (
@@ -107,6 +118,7 @@ create policy "missions: owner update"
     )
   );
 
+drop policy if exists "missions: owner delete" on public.missions;
 create policy "missions: owner delete"
   on public.missions for delete
   using (
@@ -119,10 +131,12 @@ create policy "missions: owner delete"
 -- ---------------------------------------------------------------------------
 -- applications
 -- ---------------------------------------------------------------------------
+drop policy if exists "applications: worker read own" on public.applications;
 create policy "applications: worker read own"
   on public.applications for select
   using (worker_id = auth.uid());
 
+drop policy if exists "applications: structure read for own missions" on public.applications;
 create policy "applications: structure read for own missions"
   on public.applications for select
   using (
@@ -134,6 +148,7 @@ create policy "applications: structure read for own missions"
     )
   );
 
+drop policy if exists "applications: worker apply" on public.applications;
 create policy "applications: worker apply"
   on public.applications for insert
   with check (
@@ -144,11 +159,13 @@ create policy "applications: worker apply"
     )
   );
 
+drop policy if exists "applications: worker cancel own" on public.applications;
 create policy "applications: worker cancel own"
   on public.applications for update
   using (worker_id = auth.uid())
   with check (worker_id = auth.uid() and status in ('pending', 'cancelled'));
 
+drop policy if exists "applications: structure accept or reject" on public.applications;
 create policy "applications: structure accept or reject"
   on public.applications for update
   using (
@@ -172,10 +189,12 @@ create policy "applications: structure accept or reject"
 -- lemonway_accounts / payments : lecture seule cote client, aucune ecriture
 -- (creation et mise a jour reservees aux Edge Functions en service_role).
 -- ---------------------------------------------------------------------------
+drop policy if exists "lemonway_accounts: read own" on public.lemonway_accounts;
 create policy "lemonway_accounts: read own"
   on public.lemonway_accounts for select
   using (profile_id = auth.uid());
 
+drop policy if exists "payments: worker reads own" on public.payments;
 create policy "payments: worker reads own"
   on public.payments for select
   using (
@@ -185,6 +204,7 @@ create policy "payments: worker reads own"
     )
   );
 
+drop policy if exists "payments: structure reads own missions payments" on public.payments;
 create policy "payments: structure reads own missions payments"
   on public.payments for select
   using (
@@ -200,10 +220,12 @@ create policy "payments: structure reads own missions payments"
 -- ---------------------------------------------------------------------------
 -- reliability_disputes
 -- ---------------------------------------------------------------------------
+drop policy if exists "reliability_disputes: worker read own" on public.reliability_disputes;
 create policy "reliability_disputes: worker read own"
   on public.reliability_disputes for select
   using (worker_id = auth.uid());
 
+drop policy if exists "reliability_disputes: worker create own" on public.reliability_disputes;
 create policy "reliability_disputes: worker create own"
   on public.reliability_disputes for insert
   with check (worker_id = auth.uid());
