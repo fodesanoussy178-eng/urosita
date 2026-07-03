@@ -4,9 +4,12 @@ import { Logo } from '@/components/ui/Logo';
 import { Fld } from '@/components/ui/Fld';
 import { T, FONT, inp } from '@/components/ui/theme';
 import { signUp } from './authService';
+import { AuthTabs, type AuthMode } from './AuthTabs';
+import { SignInForm } from './SignInForm';
 
 export function StructureSignupPage() {
   const nav = useNavigate();
+  const [mode, setMode] = useState<AuthMode>('signup');
   const [f, setF] = useState({ nom: '', siret: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -54,6 +57,10 @@ export function StructureSignupPage() {
           <Logo sz={54} />
         </div>
         <div style={{ background: T.card, border: `1px solid ${T.cb}`, borderRadius: 14, padding: 17 }}>
+          <AuthTabs mode={mode} onChange={setMode} />
+          {mode === 'signin' && <SignInForm />}
+          {mode === 'signup' && (
+            <>
           <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 4 }}>Avant de publier, on identifie ta structure</div>
           <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.5, marginBottom: 16 }}>
             Seules les structures identifiées (SIRET) peuvent publier des missions. Aucun lien de subordination n'est créé : UROSI est une plateforme de mise en relation (modèle mandataire).
@@ -79,6 +86,8 @@ export function StructureSignupPage() {
           >
             {busy ? '…' : ok ? 'Créer mon espace structure' : 'Renseigne nom, SIRET, email et mot de passe'}
           </button>
+            </>
+          )}
         </div>
         <div style={{ fontSize: 9, color: T.mu, textAlign: 'center', lineHeight: 1.5, marginTop: 14 }}>
           UROSI est une plateforme de mise en relation (modèle mandataire).

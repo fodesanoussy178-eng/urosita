@@ -4,9 +4,12 @@ import { Logo } from '@/components/ui/Logo';
 import { Fld } from '@/components/ui/Fld';
 import { T, FONT, inp } from '@/components/ui/theme';
 import { signUp } from './authService';
+import { AuthTabs, type AuthMode } from './AuthTabs';
+import { SignInForm } from './SignInForm';
 
 export function WorkerSignupPage() {
   const nav = useNavigate();
+  const [mode, setMode] = useState<AuthMode>('signup');
   const [f, setF] = useState({ prenom: '', nom: '', email: '', tel: '', ville: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -45,7 +48,7 @@ export function WorkerSignupPage() {
     <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', justifyContent: 'center', fontFamily: FONT, padding: '24px 16px' }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <span style={{ fontWeight: 900, fontSize: 15, color: T.text }}>Créer mon compte</span>
+          <span style={{ fontWeight: 900, fontSize: 15, color: T.text }}>{mode === 'signin' ? 'Connexion' : 'Créer mon compte'}</span>
           <button onClick={() => nav('/')} style={{ fontSize: 10, color: T.mu, background: 'none', border: `1px solid ${T.cb}`, borderRadius: 6, padding: '4px 9px', cursor: 'pointer' }}>
             ← Accueil
           </button>
@@ -54,6 +57,10 @@ export function WorkerSignupPage() {
           <Logo sz={54} />
         </div>
         <div style={{ background: T.card, border: `1px solid ${T.cb}`, borderRadius: 14, padding: 17 }}>
+          <AuthTabs mode={mode} onChange={setMode} />
+          {mode === 'signin' && <SignInForm />}
+          {mode === 'signup' && (
+            <>
           <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.5, marginBottom: 16 }}>
             Juste l'essentiel pour commencer. Pas de pièce d'identité ni d'IBAN maintenant — on te les demandera seulement quand tu accepteras ta première mission payée.
           </div>
@@ -93,6 +100,8 @@ export function WorkerSignupPage() {
           <div style={{ fontSize: 9, color: T.mu, textAlign: 'center', lineHeight: 1.5, marginTop: 10 }}>
             En créant ton compte, tu acceptes les CGU et la politique RGPD d'UROSI. Tu pourras supprimer ton compte à tout moment.
           </div>
+            </>
+          )}
         </div>
       </div>
     </div>
