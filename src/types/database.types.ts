@@ -4,7 +4,7 @@
 
 export type ProfileRole = 'worker' | 'structure_admin';
 export type MissionStatus = 'open' | 'closed' | 'cancelled';
-export type ApplicationStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
+export type ApplicationStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled' | 'completed';
 export type PaymentStatus = 'pending' | 'held' | 'released' | 'failed';
 export type DisputeStatus = 'open' | 'reviewing' | 'resolved' | 'rejected';
 
@@ -97,6 +97,8 @@ export interface Database {
           mission_id: string;
           worker_id: string;
           status: ApplicationStatus;
+          checkin_token: string;
+          checked_in_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -104,6 +106,8 @@ export interface Database {
           mission_id: string;
           worker_id: string;
           status?: ApplicationStatus;
+          checkin_token?: string;
+          checked_in_at?: string | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['applications']['Insert']>;
@@ -170,6 +174,48 @@ export interface Database {
             columns: ['application_id'];
             isOneToOne: false;
             referencedRelation: 'applications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ratings: {
+        Row: {
+          id: string;
+          application_id: string;
+          structure_id: string;
+          worker_id: string;
+          score: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          structure_id: string;
+          worker_id: string;
+          score: number;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['ratings']['Insert']>;
+        Relationships: [
+          {
+            foreignKeyName: 'ratings_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: true;
+            referencedRelation: 'applications';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ratings_structure_id_fkey';
+            columns: ['structure_id'];
+            isOneToOne: false;
+            referencedRelation: 'structures';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ratings_worker_id_fkey';
+            columns: ['worker_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
         ];

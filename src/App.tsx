@@ -8,6 +8,7 @@ import { WorkerSignupPage } from '@/features/auth/WorkerSignupPage';
 import { StructureSignupPage } from '@/features/auth/StructureSignupPage';
 import { WorkerApp } from '@/features/worker/WorkerApp';
 import { StructureApp } from '@/features/structure/StructureApp';
+import { CheckinPage } from '@/features/missions/CheckinPage';
 
 function Centered({ text }: { text: string }) {
   return (
@@ -35,6 +36,7 @@ function AppShell() {
         <Route path="/connexion" element={<SignInPage />} />
         <Route path="/inscription/travailleur" element={<WorkerSignupPage />} />
         <Route path="/inscription/structure" element={<StructureSignupPage />} />
+        <Route path="/pointage/:applicationId/:token" element={<CheckinPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -46,6 +48,7 @@ function AppShell() {
 
   return (
     <Routes>
+      <Route path="/pointage/:applicationId/:token" element={<CheckinPage />} />
       <Route path="*" element={profile.role === 'structure_admin' ? <StructureApp /> : <WorkerApp />} />
     </Routes>
   );
