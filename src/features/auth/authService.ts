@@ -10,6 +10,7 @@ export interface SignUpInput {
   phone?: string;
   structureName?: string;
   siret?: string;
+  isEss?: boolean;
 }
 
 export interface SignInInput {
@@ -17,7 +18,7 @@ export interface SignInInput {
   password: string;
 }
 
-export async function signUp({ email, password, fullName, role, city, phone, structureName, siret }: SignUpInput) {
+export async function signUp({ email, password, fullName, role, city, phone, structureName, siret, isEss }: SignUpInput) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -29,6 +30,7 @@ export async function signUp({ email, password, fullName, role, city, phone, str
         phone: phone ?? null,
         structure_name: structureName ?? null,
         siret: siret ?? null,
+        is_ess: isEss ?? false,
       },
     },
   });
