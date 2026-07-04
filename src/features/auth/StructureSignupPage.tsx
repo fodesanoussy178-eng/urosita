@@ -10,7 +10,7 @@ import { SignInForm } from './SignInForm';
 export function StructureSignupPage() {
   const nav = useNavigate();
   const [mode, setMode] = useState<AuthMode>('signup');
-  const [f, setF] = useState({ nom: '', siret: '', email: '', password: '' });
+  const [f, setF] = useState({ nom: '', siret: '', email: '', password: '', ess: false });
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -33,6 +33,7 @@ export function StructureSignupPage() {
         role: 'structure_admin',
         structureName: f.nom.trim(),
         siret: f.siret.trim(),
+        isEss: f.ess,
       });
       if (!data.session) {
         setInfo('Compte créé ! Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.');
@@ -70,6 +71,17 @@ export function StructureSignupPage() {
           </Fld>
           <Fld label="SIRET">
             <input aria-label="SIRET" value={f.siret} onChange={(e) => setF((x) => ({ ...x, siret: e.target.value }))} placeholder="123 456 789 00012" style={inp} inputMode="numeric" />
+          </Fld>
+          <Fld label="Type de structure">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              <button type="button" onClick={() => setF((x) => ({ ...x, ess: false }))} style={{ background: !f.ess ? '#fff' : T.row, color: !f.ess ? '#000' : T.sub, border: `1px solid ${!f.ess ? '#fff' : T.cb}`, borderRadius: 9, padding: '10px 0', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                🏢 Entreprise
+              </button>
+              <button type="button" onClick={() => setF((x) => ({ ...x, ess: true }))} style={{ background: f.ess ? '#16a34a' : T.row, color: f.ess ? '#fff' : '#4ade80', border: `1px solid ${f.ess ? '#16a34a' : '#14532d'}`, borderRadius: 9, padding: '10px 0', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                🤝 Association (ESS)
+              </button>
+            </div>
+            {f.ess && <div style={{ fontSize: 9.5, color: T.green, marginTop: 6, lineHeight: 1.5 }}>Les associations ESS peuvent publier des missions solidaires (bénévoles, 0 €) qui comptent dans le CV vivant des participants.</div>}
           </Fld>
           <Fld label="Email">
             <input aria-label="Email" value={f.email} onChange={(e) => setF((x) => ({ ...x, email: e.target.value }))} placeholder="contact@structure.fr" style={inp} inputMode="email" type="email" />

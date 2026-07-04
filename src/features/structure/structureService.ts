@@ -7,12 +7,17 @@ export async function fetchMyStructures(ownerId: string): Promise<Structure[]> {
   return data ?? [];
 }
 
-export async function createStructure(ownerId: string, name: string, siret?: string): Promise<Structure> {
+export async function createStructure(ownerId: string, name: string, siret?: string, isEss?: boolean): Promise<Structure> {
   const { data, error } = await supabase
     .from('structures')
-    .insert({ owner_id: ownerId, name, siret: siret || null })
+    .insert({ owner_id: ownerId, name, siret: siret || null, is_ess: isEss ?? false })
     .select('*')
     .single();
   if (error) throw error;
   return data;
+}
+
+export async function updateStructureAbout(structureId: string, about: string): Promise<void> {
+  const { error } = await supabase.from('structures').update({ about: about || null }).eq('id', structureId);
+  if (error) throw error;
 }

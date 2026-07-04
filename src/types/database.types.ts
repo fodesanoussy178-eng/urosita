@@ -6,6 +6,8 @@ export type ProfileRole = 'worker' | 'structure_admin';
 export type MissionStatus = 'open' | 'closed' | 'cancelled';
 export type ApplicationStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled' | 'completed';
 export type PaymentStatus = 'pending' | 'held' | 'released' | 'failed';
+export type RatingDirection = 'worker_to_structure' | 'structure_to_worker';
+export type ReportMotif = 'absent' | 'conditions' | 'securite' | 'autre';
 export type DisputeStatus = 'open' | 'reviewing' | 'resolved' | 'rejected';
 
 export interface Database {
@@ -35,6 +37,8 @@ export interface Database {
           owner_id: string;
           name: string;
           siret: string | null;
+          is_ess: boolean;
+          about: string | null;
           created_at: string;
         };
         Insert: {
@@ -42,6 +46,8 @@ export interface Database {
           owner_id: string;
           name: string;
           siret?: string | null;
+          is_ess?: boolean;
+          about?: string | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['structures']['Insert']>;
@@ -65,6 +71,7 @@ export interface Database {
           scheduled_date: string;
           duration_minutes: number;
           worker_rate_cents: number;
+          is_solidaire: boolean;
           status: MissionStatus;
           created_at: string;
         };
@@ -77,6 +84,7 @@ export interface Database {
           scheduled_date: string;
           duration_minutes: number;
           worker_rate_cents: number;
+          is_solidaire?: boolean;
           status?: MissionStatus;
           created_at?: string;
         };
@@ -185,6 +193,7 @@ export interface Database {
           structure_id: string;
           worker_id: string;
           score: number;
+          direction: RatingDirection;
           created_at: string;
         };
         Insert: {
@@ -193,6 +202,7 @@ export interface Database {
           structure_id: string;
           worker_id: string;
           score: number;
+          direction?: RatingDirection;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['ratings']['Insert']>;
@@ -213,6 +223,67 @@ export interface Database {
           },
           {
             foreignKeyName: 'ratings_worker_id_fkey';
+            columns: ['worker_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      delay_notices: {
+        Row: {
+          id: string;
+          application_id: string;
+          minutes: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          minutes: number;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['delay_notices']['Insert']>;
+        Relationships: [
+          {
+            foreignKeyName: 'delay_notices_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'applications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      reports: {
+        Row: {
+          id: string;
+          application_id: string;
+          worker_id: string;
+          motif: ReportMotif;
+          note: string | null;
+          status: 'open' | 'reviewing' | 'resolved';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          application_id: string;
+          worker_id: string;
+          motif: ReportMotif;
+          note?: string | null;
+          status?: 'open' | 'reviewing' | 'resolved';
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['reports']['Insert']>;
+        Relationships: [
+          {
+            foreignKeyName: 'reports_application_id_fkey';
+            columns: ['application_id'];
+            isOneToOne: false;
+            referencedRelation: 'applications';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'reports_worker_id_fkey';
             columns: ['worker_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
