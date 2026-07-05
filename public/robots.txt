@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /pointage/
+
+Sitemap: https://urosi.fr/sitemap.xml

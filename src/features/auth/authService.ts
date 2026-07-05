@@ -23,6 +23,10 @@ export async function signUp({ email, password, fullName, role, city, phone, str
     email,
     password,
     options: {
+      // Renvoie le lien de confirmation vers le domaine qui a servi l'inscription
+      // (https://urosi.fr en prod, localhost en dev). Le domaine doit figurer dans
+      // les Redirect URLs du dashboard Supabase.
+      emailRedirectTo: window.location.origin,
       data: {
         full_name: fullName,
         role,

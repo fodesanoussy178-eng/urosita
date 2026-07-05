@@ -31,9 +31,12 @@ comptes `auth.users` avec un mot de passe connu (`demo-password`).
 - **Providers -> Email** : active.
 - **Confirm email** : a activer pour la prod (en dev tu peux le couper pour
   tester vite).
-- **URL Configuration -> Site URL** : `http://localhost:5173` en dev, ton
-  domaine de prod ensuite.
-- **Redirect URLs** : ajoute ton domaine de prod.
+- **URL Configuration -> Site URL** : `https://urosi.fr` en prod
+  (`http://localhost:5173` en dev).
+- **Redirect URLs** : ajoute `https://urosi.fr/**` (et
+  `http://localhost:5173/**` pour le dev). Le front passe
+  `emailRedirectTo: window.location.origin` au signUp, donc le lien de
+  confirmation revient sur le domaine qui a servi l'inscription.
 
 Le trigger `handle_new_user` (migration `0002_functions.sql`) cree
 automatiquement la ligne `profiles` a chaque inscription, avec le `role`
@@ -56,7 +59,26 @@ npm test      # suite de tests Vitest
 npm run build # typecheck + build de production
 ```
 
-## 5. Tester le chemin critique
+## 5. Mise en ligne sur urosi.fr (Vercel)
+
+Le depot contient deja `vercel.json` (rewrite SPA vers `index.html`).
+
+1. **Importer le projet** : dashboard Vercel -> Add New -> Project -> ce
+   depot GitHub. Framework preset : Vite (build `npm run build`, output
+   `dist/`, detecte automatiquement).
+2. **Variables d'environnement** (Settings -> Environment Variables) :
+   `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`, puis redeploie.
+3. **Domaine** : Settings -> Domains -> ajoute `urosi.fr` et `www.urosi.fr`
+   (Vercel propose la redirection www -> apex). Chez ton registrar, cree les
+   enregistrements DNS que Vercel affiche — typiquement un enregistrement
+   `A` sur l'apex et un `CNAME cname.vercel-dns.com` sur `www` (reprends les
+   valeurs exactes du dashboard). Le certificat HTTPS est emis
+   automatiquement.
+4. **Supabase** : reporte `https://urosi.fr` en Site URL et dans les
+   Redirect URLs (section 2 ci-dessus), sinon les emails de confirmation
+   pointeront vers localhost.
+
+## 6. Tester le chemin critique
 1. Cree un compte "Structure" et un compte "Travailleur" via l'ecran
    d'inscription de l'app.
 2. Connecte en tant que structure : l'app te propose de creer ta structure,

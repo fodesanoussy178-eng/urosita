@@ -4,6 +4,9 @@ Plateforme de micro-missions de la MEL (modele mandataire). Application
 React + TypeScript branchee sur une vraie base Supabase (Postgres + Auth +
 Row Level Security) — plus un prototype a donnees fictives.
 
+**Production : [https://urosi.fr](https://urosi.fr)** (Vercel — voir
+[`SETUP.md`](./SETUP.md) pour le branchement domaine + Supabase).
+
 ## Stack
 
 - **React 18 + TypeScript** (Vite)
