@@ -4,7 +4,8 @@ import { signOut } from '@/features/auth/authService';
 import { T, FONT, inp } from '@/components/ui/theme';
 import { Fld } from '@/components/ui/Fld';
 import { DocModal, type DocKey } from '@/components/ui/DocModal';
-import { fetchMyStructures, createStructure, updateStructureAbout } from './structureService';
+import { fetchMyStructures, createStructure, updateStructureAbout, subscribeStructure } from './structureService';
+import { isFounder } from '@/lib/access';
 import { fetchMissionsForStructure, createMission } from '@/features/missions/missionsService';
 import {
   fetchApplicationsForMission,
@@ -107,7 +108,6 @@ export function StructureApp() {
         setLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   async function createFromForm() {
@@ -161,6 +161,9 @@ export function StructureApp() {
       setPanelRep({ average: null, count: 0 });
     }
   }
+
+  const founder = isFounder(session?.user.email);
+  const needsSub = !!structure && !founder && !structure.subscription_active;
 
   const allCands: CandWithMission[] = mis.flatMap((m) => (cands.get(m.id) ?? []).map((c) => ({ ...c, missionTitle: m.title })));
   const pending = allCands.filter((c) => c.status === 'pending');
@@ -222,6 +225,13 @@ export function StructureApp() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, flexWrap: 'wrap' }}>
                     {structure.is_ess && <span style={{ fontSize: 8, fontWeight: 700, color: T.green, background: T.greenBg, borderRadius: 8, padding: '1px 6px' }}>🤝 Association · ESS</span>}
                     {structure.siret && <span style={{ fontSize: 8, fontWeight: 700, color: T.green, background: T.greenBg, borderRadius: 8, padding: '1px 6px' }}>✓ SIRET {structure.siret}</span>}
+                    {founder ? (
+                      <span style={{ fontSize: 8, fontWeight: 700, color: T.cyan, background: '#22d3ee15', borderRadius: 8, padding: '1px 6px' }}>👑 Compte fondateur</span>
+                    ) : structure.subscription_active ? (
+                      <span style={{ fontSize: 8, fontWeight: 700, color: T.green, background: T.greenBg, borderRadius: 8, padding: '1px 6px' }}>✓ Abonnement actif</span>
+                    ) : (
+                      <span style={{ fontSize: 8, fontWeight: 700, color: T.amber, background: T.amberBg, borderRadius: 8, padding: '1px 6px' }}>Abonnement demandé à la publication</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -454,6 +464,11 @@ export function StructureApp() {
             {showPub && structure && (
               <PublishModal
                 structure={structure}
+                needsSubscription={needsSub}
+                onSubscribe={async () => {
+                  await subscribeStructure(structure.id);
+                  setStructure((s) => (s ? { ...s, subscription_active: true, subscribed_at: new Date().toISOString() } : s));
+                }}
                 onClose={() => setShowPub(false)}
                 onPublished={(m) => {
                   setMis((l) => [m, ...l]);
@@ -520,34 +535,126 @@ function AboutEditor({ structure, onSaved, notif }: { structure: Structure; onSa
   );
 }
 
-function PublishModal({ structure, onClose, onPublished }: { structure: Structure; onClose: () => void; onPublished: (m: Mission) => void }) {
+function PublishModal({
+  structure,
+  needsSubscription,
+  onSubscribe,
+  onClose,
+  onPublished,
+}: {
+  structure: Structure;
+  needsSubscription: boolean;
+  onSubscribe: () => Promise<void>;
+  onClose: () => void;
+  onPublished: (m: Mission) => void;
+}) {
   const [f, setF] = useState({ t: '', adr: '', jour: 0, duree: 4, pay: 42, desc: '', solid: false });
+  const [step, setStep] = useState<'form' | 'abonnement'>('form');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const ok = f.t.trim().length >= 2 && f.adr.trim().length >= 2 && (f.solid || f.pay > 0);
 
+  async function doCreate() {
+    const mission = await createMission({
+      structure_id: structure.id,
+      title: f.t.trim(),
+      detail: f.desc.trim() || null,
+      city: f.adr.trim(),
+      scheduled_date: dayToDate(f.jour),
+      duration_minutes: f.duree * 60,
+      worker_rate_cents: f.solid ? 0 : Math.round(f.pay * 100),
+      is_solidaire: f.solid,
+    });
+    onPublished(mission);
+  }
+
   async function publish() {
     if (!ok || busy) return;
+    if (needsSubscription) {
+      // La mission est prête : on demande l'abonnement au moment de publier.
+      setError(null);
+      setStep('abonnement');
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
-      const mission = await createMission({
-        structure_id: structure.id,
-        title: f.t.trim(),
-        detail: f.desc.trim() || null,
-        city: f.adr.trim(),
-        scheduled_date: dayToDate(f.jour),
-        duration_minutes: f.duree * 60,
-        worker_rate_cents: f.solid ? 0 : Math.round(f.pay * 100),
-        is_solidaire: f.solid,
-      });
-      onPublished(mission);
+      await doCreate();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Publication impossible.');
     } finally {
       setBusy(false);
     }
+  }
+
+  async function subscribeAndPublish() {
+    if (busy) return;
+    setError(null);
+    setBusy(true);
+    try {
+      await onSubscribe();
+      await doCreate();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Activation de l'abonnement impossible.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (step === 'abonnement') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.85)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 400 }} onClick={onClose}>
+        <div style={{ width: '100%', maxWidth: 420, background: T.card, borderRadius: '20px 20px 0 0', padding: '18px 16px 26px', fontFamily: FONT, maxHeight: '88vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <span style={{ fontSize: 15, fontWeight: 900, color: T.text }}>Abonne ta structure pour publier</span>
+            <button onClick={onClose} style={{ background: T.row, border: 'none', borderRadius: 6, width: 26, height: 26, cursor: 'pointer', color: T.sub, fontSize: 14 }}>×</button>
+          </div>
+          <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.55, marginBottom: 14 }}>
+            Ta mission est prête. La diffusion aux travailleurs de la MEL est réservée aux structures abonnées.
+          </div>
+          <div style={{ background: T.row, borderRadius: 11, padding: '12px 13px', marginBottom: 12 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: T.mu, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Ta mission</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: T.text, marginBottom: 2 }}>{f.t.trim()}</div>
+            <div style={{ fontSize: 10, color: T.mu }}>
+              📍 {f.adr.trim()} · {dayLabel(f.jour)} · {f.duree}h · {f.solid ? 'Solidaire (0 €)' : `${f.pay} €`}
+            </div>
+          </div>
+          <div style={{ background: '#0c1a2e', border: '1px solid #1d4ed8', borderRadius: 13, padding: '14px 15px', marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 900, color: T.text }}>Abonnement Structure</span>
+              <span style={{ fontSize: 16, fontWeight: 900, color: T.cyan }}>
+                29 €<span style={{ fontSize: 10, color: T.sub, fontWeight: 700 }}>/mois</span>
+              </span>
+            </div>
+            {[
+              'Missions illimitées, diffusées à tous les travailleurs',
+              'Gestion des candidats, habitués et notations',
+              'Structure vérifiée (SIRET) mise en avant dans le flux',
+            ].map((l) => (
+              <div key={l} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: 11, color: T.sub, lineHeight: 1.5, marginBottom: 4 }}>
+                <span style={{ color: T.green }}>✓</span>
+                {l}
+              </div>
+            ))}
+            <div style={{ marginTop: 8, fontSize: 10, fontWeight: 800, color: T.green, background: T.greenBg, border: `1px solid ${T.greenBorder}`, borderRadius: 8, padding: '6px 9px', lineHeight: 1.5 }}>
+              🎁 Bêta : abonnement offert — aucun paiement aujourd'hui, résiliable à tout moment.
+            </div>
+          </div>
+          <div style={{ fontSize: 10, color: T.mu, marginBottom: 12 }}>
+            Structure : <span style={{ color: T.sub, fontWeight: 700 }}>{structure.name}</span>
+            {structure.siret ? ` · SIRET ${structure.siret}` : ' · SIRET à compléter'}
+          </div>
+          {error && <div style={{ fontSize: 11, color: T.red, marginBottom: 10 }}>{error}</div>}
+          <button onClick={subscribeAndPublish} disabled={busy} style={{ width: '100%', background: busy ? T.row : T.grad, color: busy ? T.mu : '#fff', border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 14, fontWeight: 900, cursor: busy ? 'not-allowed' : 'pointer' }}>
+            {busy ? '…' : "S'abonner et publier la mission"}
+          </button>
+          <button onClick={() => setStep('form')} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: T.mu, padding: '10px 0 0' }}>
+            ← Modifier la mission
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

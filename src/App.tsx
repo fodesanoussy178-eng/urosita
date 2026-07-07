@@ -9,6 +9,8 @@ import { StructureSignupPage } from '@/features/auth/StructureSignupPage';
 import { WorkerApp } from '@/features/worker/WorkerApp';
 import { StructureApp } from '@/features/structure/StructureApp';
 import { CheckinPage } from '@/features/missions/CheckinPage';
+import { DemoWorkerPage } from '@/features/demo/DemoWorkerApp';
+import { DemoStructurePage } from '@/features/demo/DemoStructureApp';
 
 function Centered({ text }: { text: string }) {
   return (
@@ -36,6 +38,8 @@ function AppShell() {
         <Route path="/connexion" element={<SignInPage />} />
         <Route path="/inscription/travailleur" element={<WorkerSignupPage />} />
         <Route path="/inscription/structure" element={<StructureSignupPage />} />
+        <Route path="/demo/travailleur" element={<DemoWorkerPage />} />
+        <Route path="/demo/structure" element={<DemoStructurePage />} />
         <Route path="/pointage/:applicationId/:token" element={<CheckinPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

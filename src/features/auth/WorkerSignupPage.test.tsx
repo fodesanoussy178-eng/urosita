@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { WorkerSignupPage } from './WorkerSignupPage';
@@ -28,6 +28,8 @@ describe('WorkerSignupPage', () => {
     await user.type(screen.getByLabelText('Nom'), 'Diallo');
     await user.type(screen.getByLabelText('Email'), 'fode@email.com');
     await user.type(screen.getByLabelText('Mot de passe'), 'secret123');
+    fireEvent.change(screen.getByLabelText('Date de naissance'), { target: { value: '1998-05-12' } });
+    await user.type(screen.getByLabelText('Adresse'), '5 rue des Postes');
     await user.type(screen.getByLabelText('Ville'), 'Tourcoing');
     await user.click(screen.getByRole('button', { name: 'Créer mon compte' }));
 
@@ -39,6 +41,8 @@ describe('WorkerSignupPage', () => {
         role: 'worker',
         city: 'Tourcoing',
         phone: undefined,
+        birthDate: '1998-05-12',
+        address: '5 rue des Postes',
       }),
     );
   });

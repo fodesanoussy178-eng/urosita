@@ -19,6 +19,10 @@ export interface Database {
           full_name: string;
           role: ProfileRole;
           is_micro_entrepreneur: boolean;
+          city: string | null;
+          phone: string | null;
+          birth_date: string | null;
+          address: string | null;
           created_at: string;
         };
         Insert: {
@@ -26,6 +30,10 @@ export interface Database {
           full_name?: string;
           role?: ProfileRole;
           is_micro_entrepreneur?: boolean;
+          city?: string | null;
+          phone?: string | null;
+          birth_date?: string | null;
+          address?: string | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
@@ -39,6 +47,8 @@ export interface Database {
           siret: string | null;
           is_ess: boolean;
           about: string | null;
+          subscription_active: boolean;
+          subscribed_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -48,6 +58,8 @@ export interface Database {
           siret?: string | null;
           is_ess?: boolean;
           about?: string | null;
+          subscription_active?: boolean;
+          subscribed_at?: string | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['structures']['Insert']>;
@@ -331,6 +343,11 @@ export interface Database {
         Relationships: [];
       };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      subscribe_structure: {
+        Args: { p_structure_id: string };
+        Returns: undefined;
+      };
+    };
   };
 }

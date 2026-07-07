@@ -13,28 +13,40 @@ export function EntryPage() {
         <div style={{ fontSize: 12, color: T.mu, marginBottom: 30 }}>Micro-missions · Métropole de Lille</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
-            onClick={() => nav('/inscription/travailleur')}
+            onClick={() => nav('/demo/travailleur')}
             style={{ textAlign: 'left', padding: '16px 17px', borderRadius: 13, border: `1.5px solid ${T.cb}`, background: T.card, cursor: 'pointer' }}
           >
             <div style={{ fontSize: 19, marginBottom: 5 }}>👷</div>
             <div style={{ fontSize: 14, fontWeight: 800, color: T.text, marginBottom: 2 }}>Je cherche des missions</div>
-            <div style={{ fontSize: 12, color: T.mu }}>Trouver du travail flexible près de chez moi</div>
+            <div style={{ fontSize: 12, color: T.mu }}>Essaie la démo · 30 s, puis crée ton compte</div>
           </button>
           <button
-            onClick={() => nav('/inscription/structure')}
+            onClick={() => nav('/demo/structure')}
             style={{ textAlign: 'left', padding: '16px 17px', borderRadius: 13, border: 'none', background: T.grad, cursor: 'pointer' }}
           >
             <div style={{ fontSize: 19, marginBottom: 5 }}>🏢</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 2 }}>Je cherche des renforts</div>
-            <div style={{ fontSize: 12, color: '#bfdbfe' }}>Publier des missions, gérer mes candidats</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 2 }}>Je publie des missions</div>
+            <div style={{ fontSize: 12, color: '#bfdbfe' }}>Vois la démo · l'abonnement arrive à la publication</div>
           </button>
         </div>
-        <button
-          onClick={() => nav('/connexion')}
-          style={{ marginTop: 22, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: T.sub, textDecoration: 'underline', fontWeight: 700 }}
-        >
-          Déjà un compte ? Se connecter
-        </button>
+        <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ fontSize: 11, color: T.mu }}>
+            S'inscrire directement :{' '}
+            <button onClick={() => nav('/inscription/travailleur')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: T.sub, textDecoration: 'underline', fontWeight: 700, padding: 0 }}>
+              Travailleur
+            </button>
+            {' · '}
+            <button onClick={() => nav('/inscription/structure')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: T.sub, textDecoration: 'underline', fontWeight: 700, padding: 0 }}>
+              Structure
+            </button>
+          </div>
+          <button
+            onClick={() => nav('/connexion')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: T.sub, textDecoration: 'underline', fontWeight: 700 }}
+          >
+            Déjà un compte ? Se connecter
+          </button>
+        </div>
       </div>
     </div>
   );

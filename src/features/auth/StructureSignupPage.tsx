@@ -10,7 +10,7 @@ import { SignInForm } from './SignInForm';
 export function StructureSignupPage() {
   const nav = useNavigate();
   const [mode, setMode] = useState<AuthMode>('signup');
-  const [f, setF] = useState({ nom: '', siret: '', email: '', password: '', ess: false });
+  const [f, setF] = useState({ nom: '', siret: '', adresse: '', email: '', password: '', ess: false });
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -18,6 +18,7 @@ export function StructureSignupPage() {
   const ok =
     f.nom.trim().length >= 2 &&
     f.siret.replace(/\s/g, '').length >= 9 &&
+    f.adresse.trim().length >= 4 &&
     /\S+@\S+\.\S+/.test(f.email) &&
     f.password.length >= 6;
 
@@ -34,6 +35,7 @@ export function StructureSignupPage() {
         structureName: f.nom.trim(),
         siret: f.siret.trim(),
         isEss: f.ess,
+        address: f.adresse.trim(),
       });
       if (!data.session) {
         setInfo('Compte créé ! Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.');
@@ -72,6 +74,9 @@ export function StructureSignupPage() {
           <Fld label="SIRET">
             <input aria-label="SIRET" value={f.siret} onChange={(e) => setF((x) => ({ ...x, siret: e.target.value }))} placeholder="123 456 789 00012" style={inp} inputMode="numeric" />
           </Fld>
+          <Fld label="Adresse de la structure">
+            <input aria-label="Adresse de la structure" value={f.adresse} onChange={(e) => setF((x) => ({ ...x, adresse: e.target.value }))} placeholder="12 Rue de Béthune, Lille" style={inp} />
+          </Fld>
           <Fld label="Type de structure">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
               <button type="button" onClick={() => setF((x) => ({ ...x, ess: false }))} style={{ background: !f.ess ? '#fff' : T.row, color: !f.ess ? '#000' : T.sub, border: `1px solid ${!f.ess ? '#fff' : T.cb}`, borderRadius: 9, padding: '10px 0', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
@@ -96,8 +101,11 @@ export function StructureSignupPage() {
             disabled={!ok || busy}
             style={{ width: '100%', background: ok && !busy ? '#fff' : T.row, color: ok && !busy ? '#000' : T.mu, border: 'none', borderRadius: 10, padding: '13px 0', fontSize: 14, fontWeight: 900, cursor: ok && !busy ? 'pointer' : 'not-allowed', marginTop: 4 }}
           >
-            {busy ? '…' : ok ? 'Créer mon espace structure' : 'Renseigne nom, SIRET, email et mot de passe'}
+            {busy ? '…' : ok ? 'Créer mon espace structure' : 'Renseigne nom, SIRET, adresse, email et mot de passe'}
           </button>
+          <div style={{ fontSize: 9.5, color: T.mu, textAlign: 'center', lineHeight: 1.5, marginTop: 10 }}>
+            Compte gratuit : tu peux préparer tes missions librement. L'abonnement n'est demandé qu'au moment de publier.
+          </div>
             </>
           )}
         </div>

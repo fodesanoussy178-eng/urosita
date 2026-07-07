@@ -10,7 +10,7 @@ import { SignInForm } from './SignInForm';
 export function WorkerSignupPage() {
   const nav = useNavigate();
   const [mode, setMode] = useState<AuthMode>('signup');
-  const [f, setF] = useState({ prenom: '', nom: '', email: '', tel: '', ville: '', password: '' });
+  const [f, setF] = useState({ prenom: '', nom: '', email: '', tel: '', naissance: '', adresse: '', ville: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -19,6 +19,8 @@ export function WorkerSignupPage() {
     f.prenom.trim().length >= 2 &&
     f.nom.trim().length >= 1 &&
     /\S+@\S+\.\S+/.test(f.email) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(f.naissance) &&
+    f.adresse.trim().length >= 4 &&
     f.password.length >= 6;
 
   async function submit() {
@@ -33,6 +35,8 @@ export function WorkerSignupPage() {
         role: 'worker',
         city: f.ville.trim() || undefined,
         phone: f.tel.trim() || undefined,
+        birthDate: f.naissance,
+        address: f.adresse.trim(),
       });
       if (!data.session) {
         setInfo('Compte créé ! Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.');
@@ -81,6 +85,12 @@ export function WorkerSignupPage() {
           </Fld>
           <Fld label="Mot de passe">
             <input aria-label="Mot de passe" value={f.password} onChange={(e) => setF((x) => ({ ...x, password: e.target.value }))} placeholder="6 caractères minimum" style={inp} type="password" />
+          </Fld>
+          <Fld label="Date de naissance">
+            <input aria-label="Date de naissance" value={f.naissance} onChange={(e) => setF((x) => ({ ...x, naissance: e.target.value }))} style={{ ...inp, colorScheme: 'dark' }} type="date" max={new Date().toISOString().slice(0, 10)} />
+          </Fld>
+          <Fld label="Adresse (où tu habites)">
+            <input aria-label="Adresse" value={f.adresse} onChange={(e) => setF((x) => ({ ...x, adresse: e.target.value }))} placeholder="5 rue des Postes, Tourcoing" style={inp} />
           </Fld>
           <Fld label="Numéro de téléphone (optionnel)">
             <input aria-label="Téléphone" value={f.tel} onChange={(e) => setF((x) => ({ ...x, tel: e.target.value }))} placeholder="06 12 34 56 78" style={inp} inputMode="tel" />
