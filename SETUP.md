@@ -7,11 +7,15 @@
 
 ## 1. Appliquer les migrations
 
+> Etat actuel : **toutes les migrations `0001` -> `0011` sont deja appliquees
+> sur le projet Supabase de production (`urosit`)**, et l'Edge Function `psp`
+> est deployee. Les etapes ci-dessous ne servent que pour recreer un
+> environnement neuf.
+
 **Option A — SQL Editor (le plus simple)**
 Dashboard Supabase -> SQL Editor -> colle puis execute, dans l'ordre :
-1. `supabase/migrations/0001_schema.sql`
-2. `supabase/migrations/0002_functions.sql`
-3. `supabase/migrations/0003_rls.sql`
+`supabase/migrations/0001_schema.sql` -> `0011_security_hardening.sql`
+(l'ordre des numeros fait foi ; chaque fichier est re-executable).
 
 **Option B — CLI**
 ```bash
@@ -33,7 +37,13 @@ comptes `auth.users` avec un mot de passe connu (`demo-password`).
   tester vite).
 - **URL Configuration -> Site URL** : `http://localhost:5173` en dev, ton
   domaine de prod ensuite.
-- **Redirect URLs** : ajoute ton domaine de prod.
+- **Redirect URLs** : ajoute ton domaine de prod **et**
+  `https://<ton-domaine>/reinitialisation` (cible du lien "mot de passe
+  oublie" — sinon Supabase refuse la redirection).
+- **Leaked password protection** (Authentication -> Policies) : a activer.
+- **Telephone** : le numero est collecte a l'inscription et stocke dans
+  `profiles.phone`. Pour l'auth par SMS (OTP), brancher un provider Twilio /
+  MessageBird dans Authentication -> Providers -> Phone.
 
 Le trigger `handle_new_user` (migration `0002_functions.sql`) cree
 automatiquement la ligne `profiles` a chaque inscription, avec le `role`
@@ -70,17 +80,38 @@ npm run build # typecheck + build de production
    l'insert/update doit etre bloque par le trigger
    `applications_consecutive_days_cap`.
 
-## Ce qui reste a brancher (hors perimetre de cette passe)
-- **Lemonway** : les tables (`lemonway_accounts`, `payments`) et le
-  cantonnement sont modelises, mais les appels API Lemonway doivent vivre
-  dans des **Edge Functions** (service_role), jamais cote client.
-- **Indice de fiabilite affiche aux structures** : la vue `reliability_index`
-  est en `security_invoker` -> chacun voit le sien. Pour exposer l'indice
-  d'un travailleur a une structure (informatif, non-determinant), prevoir
-  une RPC controlee plutot qu'un acces direct.
+## 6. Fonctionnalites branchees dans cette version
+- **Remuneration intelligente** : regles `pay_rules` administrables dans le
+  dashboard Structure (onglet Regles). Le moteur SQL
+  `compute_mission_pricing` s'applique au trigger de publication et a
+  l'apercu live du formulaire — jour de semaine, jours feries francais
+  (calcul de Paques inclus), plage horaire, duree, secteur, difficulte,
+  urgence, distance, tension offre/demande, bonus fixes.
+- **Paiements + wallet** : a la completion d'une mission,
+  `process_mission_payment` (idempotent) cree le paiement (remuneration +
+  commission plateforme, cf. `platform_settings.commission_pct`), credite le
+  wallet du travailleur et debite celui de la structure. Historique complet
+  dans `payments` / `wallet_transactions`.
+- **Edge Function `psp`** : abstraction du prestataire de paiement
+  (provisionnement / retrait simules). Pour brancher Lemonway ou Stripe,
+  suivre les commentaires dans `supabase/functions/psp/index.ts`.
+- **Messagerie temps reel** : table `messages` (un fil par candidature
+  acceptee), publiee sur `supabase_realtime` (RLS respectee).
+- **Notifications** : table `notifications` + triggers (candidature,
+  decision, completion, note, paiement, message, retard), temps reel.
+- **Stats** : RPC `structure_stats`, `worker_stats`, `worker_cv`.
+- **Recuperation de mot de passe** : page `/reinitialisation`.
+- **Geolocalisation** : geocodage leger des communes MEL a la publication
+  (`src/lib/geo.ts`), tri du flux par distance cote client (la position du
+  travailleur ne quitte jamais son navigateur).
+
+## Ce qui reste a brancher
+- **PSP reel (Lemonway/Stripe)** : remplacer `simulateProvider` dans l'Edge
+  Function `psp` et ne crediter le wallet qu'apres webhook de confirmation.
+- **Auth SMS** : provider Twilio/MessageBird a configurer dans le dashboard.
 - **Generation automatique des types** : `src/types/database.types.ts` est
   aligne manuellement sur les migrations. Des que le projet est lie en CLI,
-  remplace-le par `supabase gen types typescript --linked > src/types/database.types.ts`.
+  tu peux le regenerer via `supabase gen types typescript --linked`.
 
 ## Note d'architecture
 Modele mandataire respecte dans le schema : aucune colonne ne permet a la

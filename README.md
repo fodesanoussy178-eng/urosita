@@ -56,6 +56,25 @@ Supabase (migrations, auth, variables d'environnement).
 | `npm test` | tests Vitest |
 | `npm run preview` | previsualise le build de production |
 
+## Fonctionnalites
+
+- Auth email persistante (inscription Worker/Structure, connexion, mot de
+  passe oublie via `/reinitialisation`).
+- Publication et gestion de missions (secteur, difficulte, urgence, heure,
+  geolocalisation MEL) et candidatures avec pointage QR.
+- **Remuneration intelligente** : regles configurables par la structure
+  (week-end, jours feries, nuit, duree, secteur, difficulte, urgence,
+  distance, tension offre/demande, bonus). Calcul en SQL, apercu live a la
+  publication, detail transparent affiche au travailleur.
+- **Paiements + wallet** : paiement automatique a la completion (commission
+  plateforme incluse), wallets credite/debite, historique complet, Edge
+  Function `psp` prete pour Lemonway/Stripe.
+- **Messagerie temps reel** par mission (Supabase Realtime) et
+  **notifications** en direct (candidatures, decisions, paiements, notes,
+  retards, messages).
+- **CV vivant** (missions prouvees + notes bidirectionnelles), statistiques
+  Worker et Structure, wallet, abonnement structure.
+
 ## Modele metier (mandataire)
 
 - Une structure publie des missions (`missions`), plafonnees a **5h** par
@@ -71,9 +90,9 @@ Voir `supabase/migrations/0001_schema.sql` (schema), `0002_functions.sql`
 
 ## Hors perimetre (roadmap)
 
-- Integration Lemonway (cantonnement des paiements) : les tables sont
-  modelisees mais les appels a l'API Lemonway doivent vivre dans des
-  **Edge Functions** avec la `service_role` key, jamais cote client.
-- Back-office admin, affichage de l'indice de fiabilite aux structures via
-  une RPC dediee (l'acces direct a la vue reste reserve au travailleur
-  concerne, cf. RLS).
+- PSP reel : l'Edge Function `psp` simule le provisionnement/retrait ;
+  brancher Lemonway ou Stripe en suivant ses commentaires (webhook de
+  confirmation avant credit du wallet).
+- Auth par SMS (OTP) : necessite un provider (Twilio/MessageBird) configure
+  dans le dashboard Supabase. Le telephone est deja collecte sur le profil.
+- Back-office admin.

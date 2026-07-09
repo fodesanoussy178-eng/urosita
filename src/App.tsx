@@ -6,6 +6,7 @@ import { EntryPage } from '@/app/EntryPage';
 import { SignInPage } from '@/features/auth/SignInPage';
 import { WorkerSignupPage } from '@/features/auth/WorkerSignupPage';
 import { StructureSignupPage } from '@/features/auth/StructureSignupPage';
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage';
 import { WorkerApp } from '@/features/worker/WorkerApp';
 import { StructureApp } from '@/features/structure/StructureApp';
 import { CheckinPage } from '@/features/missions/CheckinPage';
@@ -36,6 +37,7 @@ function AppShell() {
         <Route path="/connexion" element={<SignInPage />} />
         <Route path="/inscription/travailleur" element={<WorkerSignupPage />} />
         <Route path="/inscription/structure" element={<StructureSignupPage />} />
+        <Route path="/reinitialisation" element={<ResetPasswordPage />} />
         <Route path="/pointage/:applicationId/:token" element={<CheckinPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -48,6 +50,7 @@ function AppShell() {
 
   return (
     <Routes>
+      <Route path="/reinitialisation" element={<ResetPasswordPage />} />
       <Route path="/pointage/:applicationId/:token" element={<CheckinPage />} />
       <Route path="*" element={profile.role === 'structure_admin' ? <StructureApp /> : <WorkerApp />} />
     </Routes>

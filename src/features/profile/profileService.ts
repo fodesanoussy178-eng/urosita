@@ -9,7 +9,17 @@ export async function fetchProfile(userId: string): Promise<Profile | null> {
   return data;
 }
 
-export async function updateProfile(userId: string, updates: { full_name?: string; is_micro_entrepreneur?: boolean }) {
+export async function updateProfile(
+  userId: string,
+  updates: {
+    full_name?: string;
+    is_micro_entrepreneur?: boolean;
+    city?: string | null;
+    phone?: string | null;
+    bio?: string | null;
+    skills?: string[];
+  },
+) {
   const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
   if (error) throw error;
 }
