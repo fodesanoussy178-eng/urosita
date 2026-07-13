@@ -112,6 +112,18 @@ create index if not exists missions_category_status_idx on public.missions(missi
 create index if not exists missions_location_status_idx on public.missions(location, status);
 create index if not exists missions_urgent_status_idx on public.missions(is_urgent, status);
 
+-- Dependance 0004 : garantie presente avant les policies qui l'appellent.
+-- security definer -> ne re-declenche pas la RLS (evite la recursion 42P17).
+create or replace function public.is_structure_owner(_structure_id uuid)
+returns boolean
+language sql stable security definer set search_path = public
+as $$
+  select exists (
+    select 1 from public.structures s
+    where s.id = _structure_id and s.owner_id = auth.uid()
+  );
+$$;
+
 alter table public.mission_days enable row level security;
 
 drop policy if exists "mission_days: read open or own structure" on public.mission_days;
