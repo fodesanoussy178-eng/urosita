@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import type { Mission, MissionInsert } from './types';
 
-const MISSION_COLUMNS = 'id, structure_id, title, detail, city, scheduled_date, duration_minutes, worker_rate_cents, is_solidaire, status, created_at';
+const MISSION_COLUMNS =
+  'id, structure_id, title, detail, city, address, lat, lng, distance_km, scheduled_date, start_time, duration_minutes, sector, difficulty, is_urgent, worker_rate_cents, base_rate_cents, pricing_breakdown, is_solidaire, status, created_at';
 
 export interface MissionWithStructure extends Mission {
   structure: { name: string; siret: string | null; is_ess: boolean; about: string | null } | null;
