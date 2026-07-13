@@ -3,8 +3,17 @@
 -- worker_rate_cents) restent alimentes pour ne pas casser les ecrans existants.
 
 -- Compatibilite prod : certaines bases ont 0019 sans avoir encore toutes les
--- colonnes de 0006/0007/0014. Ces ajouts sont idempotents et ne suppriment
+-- colonnes de 0001/0006/0007/0014. Ces ajouts sont idempotents et ne suppriment
 -- aucune donnee.
+
+-- Colonnes de base (0001) : garanties presentes avant que les contraintes et
+-- triggers de 0019 ne les referencent. Sur une base complete, ces ADD sont des
+-- no-op grace a "if not exists".
+alter table public.missions add column if not exists scheduled_date date;
+alter table public.missions add column if not exists duration_minutes integer;
+alter table public.missions add column if not exists status text not null default 'open';
+alter table public.missions add column if not exists city text;
+
 alter table public.missions add column if not exists is_solidaire boolean not null default false;
 alter table public.missions add column if not exists sector text not null default 'autre';
 alter table public.missions add column if not exists difficulty smallint not null default 1;
