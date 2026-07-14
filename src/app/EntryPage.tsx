@@ -35,6 +35,17 @@ export function EntryPage() {
         >
           Déjà un compte ? Se connecter
         </button>
+        {/* Accès fondateur discret (protégé par code). */}
+        <div style={{ marginTop: 30 }}>
+          <button
+            onClick={() => nav('/fondateur')}
+            aria-label="Accès fondateur"
+            title="Accès fondateur"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: T.mu, opacity: 0.5, letterSpacing: 1 }}
+          >
+            ·
+          </button>
+        </div>
       </div>
     </div>
   );

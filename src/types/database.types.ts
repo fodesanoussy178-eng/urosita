@@ -9,6 +9,9 @@ export type PaymentStatus = 'pending' | 'held' | 'released' | 'failed';
 export type RatingDirection = 'worker_to_structure' | 'structure_to_worker';
 export type ReportMotif = 'absent' | 'conditions' | 'securite' | 'autre';
 export type DisputeStatus = 'open' | 'reviewing' | 'resolved' | 'rejected';
+export type KycStatus = 'unverified' | 'info_required' | 'pending' | 'verified' | 'rejected';
+export type KycDocumentType = 'id_card' | 'passport' | 'residence_permit';
+export type KycProvider = 'simulation' | 'lemonway';
 
 export interface Database {
   public: {
@@ -317,6 +320,84 @@ export interface Database {
           },
         ];
       };
+      kyc_verifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          status: KycStatus;
+          full_name: string | null;
+          iban: string | null;
+          document_type: KycDocumentType | null;
+          document_path: string | null;
+          missing_info: string | null;
+          rejection_reason: string | null;
+          submitted_at: string | null;
+          reviewed_at: string | null;
+          provider: KycProvider;
+          provider_ref: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          status?: KycStatus;
+          full_name?: string | null;
+          iban?: string | null;
+          document_type?: KycDocumentType | null;
+          document_path?: string | null;
+          missing_info?: string | null;
+          rejection_reason?: string | null;
+          submitted_at?: string | null;
+          reviewed_at?: string | null;
+          provider?: KycProvider;
+          provider_ref?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['kyc_verifications']['Insert']>;
+        Relationships: [
+          {
+            foreignKeyName: 'kyc_verifications_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      kyc_status_history: {
+        Row: {
+          id: string;
+          verification_id: string;
+          user_id: string;
+          from_status: string | null;
+          to_status: string;
+          reason: string | null;
+          source: 'user' | 'simulation' | 'lemonway_webhook' | 'system';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          verification_id: string;
+          user_id: string;
+          from_status?: string | null;
+          to_status: string;
+          reason?: string | null;
+          source?: 'user' | 'simulation' | 'lemonway_webhook' | 'system';
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['kyc_status_history']['Insert']>;
+        Relationships: [
+          {
+            foreignKeyName: 'kyc_status_history_verification_id_fkey';
+            columns: ['verification_id'];
+            isOneToOne: false;
+            referencedRelation: 'kyc_verifications';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {
       reliability_index: {
@@ -331,6 +412,40 @@ export interface Database {
         Relationships: [];
       };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      founder_list_verifications: {
+        Args: { p_passcode: string };
+        Returns: {
+          id: string;
+          user_id: string;
+          full_name: string | null;
+          status: KycStatus;
+          document_type: KycDocumentType | null;
+          iban_masked: string | null;
+          missing_info: string | null;
+          rejection_reason: string | null;
+          submitted_at: string | null;
+          reviewed_at: string | null;
+          provider: KycProvider;
+          created_at: string;
+          updated_at: string;
+        }[];
+      };
+      founder_verification_history: {
+        Args: { p_passcode: string; p_verification_id: string };
+        Returns: {
+          id: string;
+          from_status: string | null;
+          to_status: string;
+          reason: string | null;
+          source: string;
+          created_at: string;
+        }[];
+      };
+      founder_set_verification_status: {
+        Args: { p_passcode: string; p_verification_id: string; p_status: string; p_reason: string | null };
+        Returns: undefined;
+      };
+    };
   };
 }

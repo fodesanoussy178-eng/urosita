@@ -18,6 +18,16 @@ import { rate, fetchStructureRatings, fetchWorkerReceivedRatings, type Structure
 import { notifyDelay, submitReport, REPORT_MOTIFS } from '@/features/missions/feedbackService';
 import type { ReportMotif } from '@/types/database.types';
 import { formatEuros, formatHours } from '@/lib/format';
+import {
+  fetchMyVerification,
+  ensureVerificationRow,
+  needsVerificationPrompt,
+  isPaymentBlocked,
+  KYC_STATUS_LABELS,
+  type KycVerification,
+} from '@/features/kyc/kycService';
+import { KycModal } from '@/features/kyc/KycModal';
+import { VerifiedBadge, StatusPill } from '@/features/kyc/VerifiedBadge';
 
 type Tab = 'flux' | 'moi' | 'profil';
 
@@ -45,6 +55,8 @@ export function WorkerApp() {
   const [sigMotif, setSigMotif] = useState<ReportMotif | null>(null);
   const [sigNote, setSigNote] = useState('');
   const [docKey, setDocKey] = useState<DocKey | null>(null);
+  const [verification, setVerification] = useState<KycVerification | null>(null);
+  const [showKyc, setShowKyc] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const tr = useRef<ReturnType<typeof setTimeout>>();
 
@@ -60,14 +72,16 @@ export function WorkerApp() {
   async function load() {
     if (!session) return;
     try {
-      const [missions, myApps, received] = await Promise.all([
+      const [missions, myApps, received, verif] = await Promise.all([
         fetchOpenMissions(),
         fetchMyApplications(session.user.id),
         fetchWorkerReceivedRatings(session.user.id),
+        fetchMyVerification(session.user.id),
       ]);
       setFlux(missions);
       setApps(myApps);
       setReceivedRatings(received);
+      setVerification(verif);
       const structureIds = [...new Set(missions.map((m) => m.structure_id))];
       setStructRatings(await fetchStructureRatings(structureIds));
     } catch {
@@ -100,6 +114,17 @@ export function WorkerApp() {
       await load();
       setDetail(null);
       notif('✓ Candidature envoyée. Elle apparaîtra dans Missions si la structure accepte.');
+      // 1re mission REMUNEREE acceptee : on declenche le parcours KYC tant que
+      // le compte n'est pas encore verifie ou en cours de verification.
+      if (!m.is_solidaire && needsVerificationPrompt(verification?.status)) {
+        try {
+          const row = await ensureVerificationRow(session.user.id);
+          setVerification(row);
+          setShowKyc(true);
+        } catch {
+          /* la verification pourra aussi etre lancee depuis l'onglet Profil */
+        }
+      }
     } catch (e) {
       notif(e instanceof Error ? e.message : 'Impossible de postuler.');
     } finally {
@@ -319,7 +344,10 @@ export function WorkerApp() {
                     {(prenom || 'U').charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: T.text }}>{profile?.full_name || session?.user.email}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: T.text }}>{profile?.full_name || session?.user.email}</span>
+                      {verification?.status === 'verified' && <VerifiedBadge />}
+                    </div>
                     <div style={{ fontSize: 10, color: T.mu }}>{ville ? `${ville} · ` : ''}CV vivant</div>
                   </div>
                 </div>
@@ -372,6 +400,7 @@ export function WorkerApp() {
                   notif('Profil mis à jour ✓');
                 }}
               />
+              <KycCard verification={verification} onStart={() => setShowKyc(true)} />
               <AideRegles onOpen={setDocKey} />
               <button onClick={() => signOut()} style={{ textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 4px', fontSize: 11, color: T.sub, fontWeight: 600 }}>
                 Se déconnecter
@@ -585,9 +614,88 @@ export function WorkerApp() {
           </div>
         )}
 
+        {showKyc && session && (
+          <KycModal
+            userId={session.user.id}
+            defaultFullName={profile?.full_name || ''}
+            missingInfo={verification?.status === 'info_required' ? verification.missing_info : null}
+            onClose={() => setShowKyc(false)}
+            onSubmitted={(v) => {
+              setVerification(v);
+              setShowKyc(false);
+              notif('Dossier envoyé — vérification en cours.');
+            }}
+          />
+        )}
+
         {docKey && <DocModal dk={docKey} onClose={() => setDocKey(null)} />}
       </div>
     </div>
+  );
+}
+
+// Carte KYC de l'onglet Profil : etat du compte + acces au parcours de
+// verification. Rappelle que les paiements sont bloques tant que non verifie.
+function KycCard({ verification, onStart }: { verification: KycVerification | null; onStart: () => void }) {
+  const status = verification?.status ?? null;
+  const blocked = isPaymentBlocked(status);
+
+  return (
+    <div style={{ background: T.card, border: `1px solid ${status === 'verified' ? T.greenBorder : T.cb}`, borderRadius: 14, padding: 15 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <div style={{ fontSize: 9, fontWeight: 700, color: T.mu, textTransform: 'uppercase', letterSpacing: 0.5 }}>Vérification du compte</div>
+        {status ? <StatusPill status={status} /> : <span style={{ fontSize: 9, fontWeight: 700, color: T.mu, background: T.row, border: `1px solid ${T.cb}`, borderRadius: 20, padding: '2px 8px' }}>{KYC_STATUS_LABELS.unverified}</span>}
+      </div>
+
+      {status === 'verified' ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <VerifiedBadge />
+          <span style={{ fontSize: 11, color: T.sub }}>Tes paiements sont autorisés.</span>
+        </div>
+      ) : status === 'pending' ? (
+        <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.5 }}>
+          Ton dossier est en cours de vérification. Tu peux continuer à postuler — les paiements seront débloqués après validation.
+        </div>
+      ) : status === 'rejected' ? (
+        <>
+          <div style={{ fontSize: 11, color: T.red, lineHeight: 1.5, marginBottom: 10 }}>
+            Dossier refusé{verification?.rejection_reason ? ` : ${verification.rejection_reason}` : '.'} Tu peux renvoyer des documents à jour.
+          </div>
+          <KycCardButton label="Renvoyer mes documents" onStart={onStart} />
+        </>
+      ) : status === 'info_required' ? (
+        <>
+          <div style={{ fontSize: 11, color: T.amber, lineHeight: 1.5, marginBottom: 10 }}>
+            Complément demandé{verification?.missing_info ? ` : ${verification.missing_info}` : '.'}
+          </div>
+          <KycCardButton label="Compléter mon dossier" onStart={onStart} />
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: 11, color: T.sub, lineHeight: 1.5, marginBottom: 10 }}>
+            Vérifie ton identité et ton IBAN pour pouvoir être payé sur les missions rémunérées.
+          </div>
+          <KycCardButton label="Vérifier mon compte" onStart={onStart} />
+        </>
+      )}
+
+      {blocked && (
+        <div style={{ marginTop: 11, fontSize: 9.5, color: T.mu, lineHeight: 1.5, borderTop: `1px solid ${T.cb}`, paddingTop: 9 }}>
+          🔒 Paiements bloqués tant que le compte n'est pas vérifié.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function KycCardButton({ label, onStart }: { label: string; onStart: () => void }) {
+  return (
+    <button
+      onClick={onStart}
+      style={{ width: '100%', background: '#fff', color: '#000', border: 'none', borderRadius: 10, padding: '11px 0', fontSize: 13, fontWeight: 900, cursor: 'pointer' }}
+    >
+      {label}
+    </button>
   );
 }
 
